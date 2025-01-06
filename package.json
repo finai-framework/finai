@@ -1,0 +1,82 @@
+{
+  "name": "gpt_service",
+  "version": "0.0.1",
+  "description": "loopback4_project",
+  "keywords": [
+    "loopback-application",
+    "loopback"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "engines": {
+    "node": "18 || 20 || 22"
+  },
+  "scripts": {
+    "build": "lb-tsc",
+    "build:watch": "lb-tsc --watch",
+    "lint": "npm run eslint && npm run prettier:check",
+    "lint:fix": "npm run eslint:fix && npm run prettier:fix",
+    "prettier:cli": "lb-prettier \"**/*.ts\" \"**/*.js\"",
+    "prettier:check": "npm run prettier:cli -- -l",
+    "prettier:fix": "npm run prettier:cli -- --write",
+    "eslint": "lb-eslint --report-unused-disable-directives .",
+    "eslint:fix": "npm run eslint -- --fix",
+    "pretest": "npm run rebuild",
+    "test": "lb-mocha --allow-console-logs \"dist/__tests__\"",
+    "posttest": "npm run lint",
+    "test:dev": "lb-mocha --allow-console-logs dist/__tests__/**/*.js && npm run posttest",
+    "docker:build": "docker build -t gpt_service .",
+    "docker:run": "docker run -p 3000:3000 -d gpt_service",
+    "premigrate": "npm run build",
+    "migrate": "node ./dist/migrate",
+    "preopenapi-spec": "npm run build",
+    "openapi-spec": "node ./dist/openapi-spec",
+    "prestart": "npm run rebuild",
+    "start": "node .",
+    "clean": "lb-clean dist *.tsbuildinfo .eslintcache",
+    "rebuild": "npm run clean && npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "author": "NguyenTrai <trai.nguyen@pamobile.co>",
+  "license": "",
+  "files": [
+    "README.md",
+    "dist",
+    "src",
+    "!*/__tests__"
+  ],
+  "dependencies": {
+    "@loopback/boot": "^7.0.3",
+    "@loopback/core": "^6.1.0",
+    "@loopback/cron": "^0.12.9",
+    "@loopback/repository": "^7.0.9",
+    "@loopback/rest": "^14.0.3",
+    "@loopback/rest-explorer": "^7.0.3",
+    "@loopback/service-proxy": "^7.0.3",
+    "axios": "^1.7.9",
+    "chatgpt": "^5.2.5",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.4.7",
+    "loopback-connector-mongodb": "^6.3.1",
+    "node-cron": "^3.0.3",
+    "node-telegram-bot-api": "^0.66.0",
+    "tslib": "^2.0.0",
+    "twitter-api-sdk": "^1.2.1",
+    "twitter-api-v2": "^1.19.0",
+    "twitter-lite": "^1.1.0"
+  },
+  "devDependencies": {
+    "@loopback/build": "^11.0.3",
+    "@loopback/eslint-config": "^15.0.3",
+    "@loopback/testlab": "^7.0.3",
+    "@types/node": "^16.18.98",
+    "@types/node-cron": "^3.0.11",
+    "@types/node-telegram-bot-api": "^0.64.7",
+    "eslint": "^8.57.0",
+    "source-map-support": "^0.5.21",
+    "typescript": "~5.2.2"
+  }
+}
