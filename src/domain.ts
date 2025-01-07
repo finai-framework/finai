@@ -1,3 +1,3 @@
 
-export let NGROK_FRONTEND = "https://1388-113-161-47-27.ngrok-free.app";
+export let NGROK_FRONTEND = "https://3a5e-113-161-47-27.ngrok-free.app";
     

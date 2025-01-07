@@ -8,19 +8,16 @@ function ChatWithBot() {
 
   // Hàm giả lập nhận tin nhắn từ bot
   const getMessFromBot = async (content) => {
+    let conversation = [...messages, content].map((message, index) =>
+      `${index % 2 === 0 ? `User: "${message}"` : `Bot: "${message}"`}`)
+      .join("\n");
     // axios to get response from bot
     let url = NGROK_FRONTEND
     try {
-      const response = await axios.post(`${url}/chat/response`, {
-        "messages": [
-          {
-            "role": "user",
-            "content": content
-          }
-        ],
+      const response = await axios.post(`${url}/chat/reply`, {
+        "conversation": conversation,
       });
-      console.log(response);
-      const botResponse = `Bot: "${response.data.choices[0].message.content}"`;
+      const botResponse = `Bot: ${response.data.choices[0].message.content}`;
       return botResponse;
     }
     catch (error) {

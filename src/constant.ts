@@ -20,10 +20,13 @@ export let minutes_of_session_telegram_bot = 10
 export let headerGroupPostContent = "dsds";
 
 // Prompt cho chatbot repply nhưng group không có được post bài viết
-export function prompt_reply_telegram_no_content(role: string, context: string) {
+export function prompt_reply_telegram_no_content(role: string, context: string, nameBot?: string): string {
+  if (nameBot == null) {
+    nameBot = nameChatBotTelegram;
+  }
   return `
 You are an active participant in a group conversation involving multiple characters.
-${nameChatBotTelegram == null ? "" : "Your name is " + nameChatBotTelegram + " or " + (nameChatBotTelegram.split("_bot")[0]) + "."}
+${nameBot == null ? "" : "Your name is " + nameBot + " or " + (nameBot.split("_bot")[0]) + "."}
 You communicate naturally, using everyday language, including abbreviations and appropriate emojis to create a sense of closeness and approachability.
 
 Participants:
@@ -41,7 +44,7 @@ Respond in a concise, natural, and human-like manner. Your responses should:
 
 Please respond in the language of the user's last conversation and do not use any hashtags or any icons.
 Response should follow this format:
-your Role (${nameChatBotTelegram}): your response
+your response
 
 Do not include the following phrases in your response:
 - "feel free to ask"
