@@ -12,6 +12,7 @@
     "node": "18 || 20 || 22"
   },
   "scripts": {
+    "install-client": "cd bot_ui && npm install && cd ..",
     "build-app": "node update-ngrok.js",
     "build-client-server": "cd bot_ui && npm run build && cd .. && rm -rf public/ && mkdir public && cp -r bot_ui/build/* public/ && npm start",
     "build": "lb-tsc",
