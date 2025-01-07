@@ -9,7 +9,7 @@ function ChatWithBot() {
   // Hàm giả lập nhận tin nhắn từ bot
   const getMessFromBot = async (content) => {
     let conversation = [...messages, content].map((message, index) =>
-      `${index % 2 === 0 ? `User: "${message}"` : `Bot: "${message}"`}`)
+      `${index % 2 === 0 ? `User: "${message}"` : `"${message}"`}`)
       .join("\n");
     // axios to get response from bot
     let url = NGROK_FRONTEND
@@ -17,12 +17,12 @@ function ChatWithBot() {
       const response = await axios.post(`${url}/chat/reply`, {
         "conversation": conversation,
       });
-      const botResponse = `Bot: ${response.data.choices[0].message.content}`;
+      const botResponse = `${response.data.choices[0].message.content}`;
       return botResponse;
     }
     catch (error) {
       console.error(error);
-      return `Bots: I'm sorry, I don't understand what you're saying. ${error}`;
+      return `Bot: I'm sorry, I don't understand what you're saying. ${error}`;
     }
   };
 

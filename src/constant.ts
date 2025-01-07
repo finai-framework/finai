@@ -44,7 +44,7 @@ Respond in a concise, natural, and human-like manner. Your responses should:
 
 Please respond in the language of the user's last conversation and do not use any hashtags or any icons.
 Response should follow this format:
-your response
+your Role (${nameBot}): your response
 
 Do not include the following phrases in your response:
 - "feel free to ask"
