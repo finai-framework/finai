@@ -1,4 +1,5 @@
 import {ApplicationConfig, GptServiceApplication} from './application';
+import {NGROK_FRONTEND} from './domain';
 
 export * from './application';
 
@@ -12,8 +13,8 @@ export async function main(options: ApplicationConfig = {}) {
   await (telegramBotService as any).initWebHook();
 
   const url = app.restServer.url;
-  console.log(`Server is running at ${url}`);
-  console.log(`Try ${url}/ping`);
+  console.log(`Server is running at ${NGROK_FRONTEND}`);
+  console.log(`Try ${NGROK_FRONTEND}`);
 
   return app;
 }

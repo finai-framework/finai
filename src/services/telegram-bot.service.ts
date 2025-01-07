@@ -1,5 +1,7 @@
 import { /* inject, */ BindingScope, injectable} from '@loopback/core';
 import TelegramBot from 'node-telegram-bot-api';
+import {NGROK_FRONTEND} from '../domain';
+
 
 
 @injectable({scope: BindingScope.TRANSIENT})
@@ -13,7 +15,7 @@ export class TelegramBotService {
   }
 
   async initWebHook() {
-    const appUrl = process.env.APP_URL;
+    const appUrl = NGROK_FRONTEND;
     const webhookPath = process.env.WEBHOOK_PATH || '/api/telegram-webhook';
 
     if (!appUrl) {

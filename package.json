@@ -1,5 +1,5 @@
 {
-  "name": "gpt_service",
+  "name": "bot_x",
   "version": "0.0.1",
   "description": "loopback4_project",
   "keywords": [
@@ -12,6 +12,8 @@
     "node": "18 || 20 || 22"
   },
   "scripts": {
+    "build-app": "node update-ngrok.js",
+    "build-client-server": "cd bot_ui && npm run build && cd .. && rm -rf public/ && mkdir public && cp -r bot_ui/build/* public/ && npm start",
     "build": "lb-tsc",
     "build:watch": "lb-tsc --watch",
     "lint": "npm run eslint && npm run prettier:check",
