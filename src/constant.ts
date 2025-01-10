@@ -1,4 +1,3 @@
-
 ////// Telegram //////
 
 // Thời gian post bài viết lên Telegram mỗi ngày
@@ -126,5 +125,21 @@ Do not include the following phrases in your response:
 `
 }
 
+////// BIRDEYE //////
+export let time_utc_post_tweeter_token_analytics_every_day = "30 26 15 * * *";
+export let max_number_of_token: number = 5;
+export let isApplyCommentary: boolean = true;
+export function prompt_analytics_token(listToken: string): string {
+  return `You are a financial analyst specializing in virtual ecosystem tokens. I will provide a list of tokens along with their market capitalization (MCAP) and percentage changes. Your task is to generate a concise Twitter-style market analysis with the following structure:
 
+Token name, MCAP, and percentage change.
+Brief commentary on the token's market movement, possible reasons for the fluctuation (e.g., market sentiment, speculation, liquidity, project success).
+Maintain a short, sharp, and engaging tone suitable for social media platforms like Twitter.
+Format the output exactly like this:
+${listToken}
+
+Brief commentary on the trend and cause
+
+📊 Close with a key takeaway about risk, market trends, or strategic advice for investors while keeping the energy high and engaging. 🚀`;
+}
 

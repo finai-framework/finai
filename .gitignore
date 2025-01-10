@@ -2,5 +2,11 @@ node_modules
 .DS_Store
 .env
 dist
+bot_ui
+public
+src/domain.ts
 bot_ui/node_modules
 bot_ui/build
+# bot_ui/src/domain.js
+
+

@@ -2,10 +2,10 @@
 import {injectable, LifeCycleObserver, service} from '@loopback/core';
 import {repository} from '@loopback/repository';
 import cron from 'node-cron';
-import {nameChatBotTelegram, prompt_reply_user, prompt_system_twitter_post, prompt_to_create_post, prompt_to_create_post_with_specific_topic, time_utc_post_telegram_every_day, time_utc_post_tweeter_every_day} from '../constant';
+import {nameChatBotTelegram, prompt_reply_user, prompt_system_twitter_post, prompt_to_create_post, prompt_to_create_post_with_specific_topic, time_utc_post_telegram_every_day, time_utc_post_tweeter_every_day, time_utc_post_tweeter_token_analytics_every_day} from '../constant';
 import {ChatGptParam, MessGpt} from '../models';
 import {ContentTelegramRepository, GroupToPostContentRepository, MessageRepository} from '../repositories';
-import {AssetService, GptService, TelegramBotService, TwitterService} from '../services';
+import {AssetService, BirdeyeService, GptService, TelegramBotService, TwitterService} from '../services';
 
 @injectable()
 export class SchedulerManager implements LifeCycleObserver {
@@ -24,7 +24,31 @@ export class SchedulerManager implements LifeCycleObserver {
     public messageRepository: MessageRepository,
     @repository(GroupToPostContentRepository)
     public groupToPostContentRepository: GroupToPostContentRepository,
+    @service(BirdeyeService)
+    public birdeyeService: BirdeyeService,
   ) {
+
+    // Run Post Token analysis article on Twitter every day
+    cron.schedule(time_utc_post_tweeter_token_analytics_every_day, async () => {
+      let content: string = await birdeyeService.getStringToMakeContent({
+        isNotHaveCommentary: true,
+      });
+      if (content.length > 280) {
+        content = await birdeyeService.getStringToMakeContent(
+          {
+            isNotHaveCommentary: false,
+          }
+        );
+        if (content.length > 280) {
+          return;
+        }
+      }
+      await twitterService.postTweet(content);
+
+    }, {
+      timezone: "Etc/UTC"
+    });
+
     // Chạy Post bài viết lên Twitter mỗi ngày
     cron.schedule(time_utc_post_tweeter_every_day, async () => {
       console.log("Post bài viết lên Twitter mỗi ngày");
@@ -56,6 +80,38 @@ export class SchedulerManager implements LifeCycleObserver {
           content = await this.getContentFromGPT();
         }
         await this.twitterService.postTweet(content);
+      } catch (e) {
+        console.log(e);
+      }
+
+    }, {
+      timezone: "Etc/UTC"
+    });
+
+    // Chạy Reply bài viết lên Twitter mỗi 15 phút
+    cron.schedule('*/16 * * * *', async () => {
+      try {
+        let RepliesToReplyInTodayTweet = await this.twitterService.getRepliesToReplyInTodayTweet();
+        if (RepliesToReplyInTodayTweet == null) return;
+
+        for (let i = 0; i < RepliesToReplyInTodayTweet.repliesToReply.length; i++) {
+          try {
+            let content = await this.getContentReplyFromGPT(
+              RepliesToReplyInTodayTweet.tweetContent,
+              RepliesToReplyInTodayTweet.repliesToReply[i].text,
+            );
+            while (content.length > 280) {
+              content = await this.getContentReplyFromGPT(
+                RepliesToReplyInTodayTweet.tweetContent,
+                RepliesToReplyInTodayTweet.repliesToReply[i].text,
+              );
+            }
+
+            await this.twitterService.replyToTweet(RepliesToReplyInTodayTweet.repliesToReply[i].id, content);
+          } catch (e) {
+            console.log(e);
+          }
+        }
       } catch (e) {
         console.log(e);
       }
@@ -96,37 +152,7 @@ export class SchedulerManager implements LifeCycleObserver {
       timezone: "Etc/UTC"
     });
 
-    // Chạy Reply bài viết lên Twitter mỗi 15 phút
-    cron.schedule('*/16 * * * *', async () => {
-      try {
-        let RepliesToReplyInTodayTweet = await this.twitterService.getRepliesToReplyInTodayTweet();
-        if (RepliesToReplyInTodayTweet == null) return;
 
-        for (let i = 0; i < RepliesToReplyInTodayTweet.repliesToReply.length; i++) {
-          try {
-            let content = await this.getContentReplyFromGPT(
-              RepliesToReplyInTodayTweet.tweetContent,
-              RepliesToReplyInTodayTweet.repliesToReply[i].text,
-            );
-            while (content.length > 280) {
-              content = await this.getContentReplyFromGPT(
-                RepliesToReplyInTodayTweet.tweetContent,
-                RepliesToReplyInTodayTweet.repliesToReply[i].text,
-              );
-            }
-
-            await this.twitterService.replyToTweet(RepliesToReplyInTodayTweet.repliesToReply[i].id, content);
-          } catch (e) {
-            console.log(e);
-          }
-        }
-      } catch (e) {
-        console.log(e);
-      }
-
-    }, {
-      timezone: "Etc/UTC"
-    });
 
   }
   async getContentReplyFromGPT(
