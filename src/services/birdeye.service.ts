@@ -1,6 +1,6 @@
 import { /* inject, */ BindingScope, injectable, service} from '@loopback/core';
 import axios from 'axios';
-import {isApplyCommentary, max_number_of_token, prompt_analytics_token} from '../constant';
+import {chain_catergories, isApplyCommentary, max_number_of_token, prompt_analytics_token} from '../constant';
 import {ChatGptParam, MessGpt} from '../models';
 import {GptService} from './gpt.service';
 
@@ -14,16 +14,20 @@ export class BirdeyeService {
   async getStringToMakeContent({
     isNotHaveCommentary = false
   }) {
-    let stringToMakeContent = "Virtual Ecosystem Tokens: MCAP trends up and down.\n";
-    let top5TokenTrending = await this.getTokensTrending();
-    let top5TokenInfoTrending = await this.getTokenInfosTrending(top5TokenTrending);
+
+    let catergory = this.getCategoryToPost();
+
+    let stringToMakeContent = `${catergory.name} trending token in the past 24h\n`;
+    let top5TokenTrending = await this.getTokensTrending(catergory.category);
+    let top5TokenInfoTrending = await this.getTokenInfosTrending(top5TokenTrending, catergory.category);
     for (let i = 0; i < top5TokenInfoTrending.length; i++) {
       stringToMakeContent = this.getInfoTokenToMakeContent(top5TokenInfoTrending, i, stringToMakeContent);
     }
+    let contentOfTop5Token = stringToMakeContent.toLowerCase();
+
     if (isNotHaveCommentary && isApplyCommentary) {
-      return stringToMakeContent;
+      return contentOfTop5Token;
     }
-    let contentOfTop5Token = stringToMakeContent;
 
     let contentOfGpt = await this.gptService.responseChat(
       new ChatGptParam(
@@ -37,7 +41,16 @@ export class BirdeyeService {
         }
       )
     );
-    return (contentOfGpt as any)["choices"][0]["message"]["content"];
+    return (contentOfGpt as any)["choices"][0]["message"]["content"].toLowerCase();
+  }
+
+  getCategoryToPost(): {
+    category: string;
+    name: string;
+  } {
+    let catergories = chain_catergories;
+    let catergory = catergories[Math.floor(Math.random() * catergories.length)];
+    return catergory;
   }
 
   private getInfoTokenToMakeContent(top5TokenInfoTrending: TokenInfo[], i: number, stringToMakeContent: string) {
@@ -62,25 +75,29 @@ export class BirdeyeService {
     return nameTwitter;
   }
 
-  private async getTokenInfosTrending(top5TokenTrending: Token[]) {
+  private async getTokenInfosTrending(top5TokenTrending: Token[], category: string) {
     let top5TokenInfoTrending = [];
 
     for (let i = 0; i < top5TokenTrending.length; i++) {
       let token = top5TokenTrending[i];
-      let tokenInfo = await this.getInfoToken(token.address ?? "");
+      let tokenInfo = await this.getInfoToken(token.address ?? "", category);
 
       top5TokenInfoTrending.push(tokenInfo);
     }
     return top5TokenInfoTrending;
   }
 
-  async getTokensTrending(): Promise<Token[]> {
+  async getTokensTrending(category: string): Promise<Token[]> {
     let url = "https://public-api.birdeye.so/defi/token_trending";
     let params = {
       "sort_by": "rank",
       "sort_type": "asc",
     }
-    let response = await this.get(url, params);
+
+    let header = {
+      "x-chain": category
+    }
+    let response = await this.get(url, params, header);
 
     let listTokenTrending = response.data.data.tokens;
     let listTop5TokenTrending = listTokenTrending.slice(0, max_number_of_token);
@@ -88,13 +105,13 @@ export class BirdeyeService {
     return listTop5TokenTrending;
   }
 
-  async getInfoToken(address: string): Promise<TokenInfo> {
+  async getInfoToken(address: string, category: string): Promise<TokenInfo> {
     let url = `https://public-api.birdeye.so/defi/token_overview`;
     let params = {
       "address": address
     }
     let header = {
-      "x-chain": "solana"
+      "x-chain": category
     }
     let response = await this.get(url, params, header)
     let tokenInfo: TokenInfo = response.data.data;

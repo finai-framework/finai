@@ -49,7 +49,7 @@ export class SchedulerManager implements LifeCycleObserver {
       timezone: "Etc/UTC"
     });
 
-    // Chạy Post bài viết lên Twitter mỗi ngày
+    // Run Post random content on Twitter every day
     cron.schedule(time_utc_post_tweeter_every_day, async () => {
       console.log("Post bài viết lên Twitter mỗi ngày");
       try {
@@ -88,7 +88,7 @@ export class SchedulerManager implements LifeCycleObserver {
       timezone: "Etc/UTC"
     });
 
-    // Chạy Reply bài viết lên Twitter mỗi 15 phút
+    // Run reply to tweet every 16 minutes
     cron.schedule('*/16 * * * *', async () => {
       try {
         let RepliesToReplyInTodayTweet = await this.twitterService.getRepliesToReplyInTodayTweet();
@@ -120,6 +120,7 @@ export class SchedulerManager implements LifeCycleObserver {
       timezone: "Etc/UTC"
     });
 
+    // Run post content to telegram every day
     cron.schedule(time_utc_post_telegram_every_day, async () => {
       console.log("Post bài viết lên Telegram mỗi ngày");
       try {
@@ -151,8 +152,6 @@ export class SchedulerManager implements LifeCycleObserver {
     }, {
       timezone: "Etc/UTC"
     });
-
-
 
   }
   async getContentReplyFromGPT(

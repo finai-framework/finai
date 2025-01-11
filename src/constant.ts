@@ -1,24 +1,24 @@
 ////// Telegram //////
 
-// Thời gian post bài viết lên Telegram mỗi ngày
+// Time to post articles on Telegram every day
 export let time_utc_post_telegram_every_day = "30 45 12 * * *";
 
-// Tên của chatbot trên Telegram
+// Name of the chatbot on Telegram
 export let nameChatBotTelegram = "dylan_ttt_bot";
 
-// số tin nhắn tối đa được sử dụng làm context cho mỗi lần chatbot trả lời
-// ví dụ 10 -> chỉ lấy 10 tin nhắn gần nhất để làm context
+// Maximum number of messages used as context for each chatbot response
+// example 10 -> only takes the last 10 messages as context
 export let max_number_of_message_for_context_bot_telegram = 10
 
-// Thời gian được sử dụng làm context cho mỗi lần chatbot trả lời
-// Đơn vị: phút
-// ví dụ 10 -> chỉ lấy các tin nhắn cách đây 10 phút so với tin nhắn hiện tại
+// Time used as context for each chatbot response
+// Unit: minutes
+// example 10 -> only takes messages from the past 10 minutes compared to the current message
 export let minutes_of_session_telegram_bot = 10
 
-// Tên Group Telegram chứa `headerGroupPostContent` thì sẽ được post bài viết
+// Name of the Telegram Group containing `headerGroupPostContent` will have articles posted
 export let headerGroupPostContent = "dsds";
 
-// Prompt cho chatbot repply nhưng group không có được post bài viết
+// Prompt for chatbot reply but groups without post content
 export function prompt_reply_telegram_no_content(role: string, context: string, nameBot?: string): string {
   if (nameBot == null) {
     nameBot = nameChatBotTelegram;
@@ -56,21 +56,21 @@ Do not include the following phrases in your response:
 
 
 /////// Twitter //////
-// Thời gian post bài viết lên Twitter mỗi ngày
+// Time to post articles on Twitter every day
 export let time_utc_post_tweeter_every_day = "00 17 15 * * *";
 
-// topics để chatbot viết bài
+// topics for the chatbot to write about
 let topics = "Parallel universes, Lost civilizations, Unexplored oceans, Cryptic symbols, The human mind, Alien artefacts, Ancient prophecies, Cosmic phenomena, Time travel, Forgotten technologies";
 
-// Prompt system cho chatbot viết bài
+// System prompt for chatbot writing articles
 export let prompt_system_twitter_post = "You are a mysterious storyteller who writes captivating and thought-provoking tweets. Your tone is enigmatic, your words spark curiosity, and your goal is to engage the audience with unexpected twists."
 
-// Prompt cho chatbot viết bài với topic ngẫu nhiên
+// Prompt for chatbot to write a post with a random topic
 export let prompt_to_create_post = `Write a short Twitter post (under 250 characters) with a mysterious and captivating tone. The content should spark curiosity and provoke thought, using vivid and intriguing language.
 I have the following topics: ${topics}. Please randomly choose a topic to write about.
 Include an element of surprise or an open-ended question to conclude the post`;
 
-// Prompt cho chatbot viết bài với topic cụ thể
+// Prompt for chatbot to write a post with a specific topic
 export function prompt_to_create_post_with_specific_topic(topic: string,): string {
   return `Write a short Twitter post (under 250 characters) with a mysterious and captivating tone. The content should spark curiosity and provoke thought, using vivid and intriguing language.
 I have the following topic: ${topic}, Please write about it.
@@ -79,8 +79,8 @@ Include an element of surprise or an open-ended question to conclude the post`;
 
 ///////// Reply /////////
 
-// Prompt cho chatbot reply user
-// telegram: reply trong group được post bài viết
+// Prompt for chatbot to reply to a user
+// telegram: reply in a group allowed to post articles
 // twitter: reply.
 export function prompt_reply_user(
   role: string,
@@ -128,18 +128,64 @@ Do not include the following phrases in your response:
 ////// BIRDEYE //////
 export let time_utc_post_tweeter_token_analytics_every_day = "30 26 15 * * *";
 export let max_number_of_token: number = 5;
+
+export let chain_catergories: {
+  category: string;
+  name: string;
+}[] = [
+    {
+      "category": "solana",
+      "name": "Solana",
+    },
+    {
+      "category": "ethereum",
+      "name": "Ethereum",
+    },
+    {
+      "category": "arbitrum",
+      "name": "Arbitrum",
+    },
+    {
+      "category": "avalanche",
+      "name": "Avalanche",
+    },
+    {
+      "category": "bsc",
+      "name": "Binance Smart Chain",
+    },
+    {
+      "category": "optimism",
+      "name": "Optimism",
+    },
+    {
+      "category": "polygon",
+      "name": "Polygon",
+    },
+    {
+      "category": "base",
+      "name": "Base Layer",
+    },
+    {
+      "category": "zksync",
+      "name": "zkSync",
+    },
+    {
+      "category": "sui",
+      "name": "SUI",
+    }
+  ];
 export let isApplyCommentary: boolean = true;
 export function prompt_analytics_token(listToken: string): string {
-  return `You are a financial analyst specializing in virtual ecosystem tokens. I will provide a list of tokens along with their market capitalization (MCAP) and percentage changes. Your task is to generate a concise Twitter-style market analysis with the following structure:
+  return `
+  You are a financial analyst specializing in tokens.
+I will provide a list of tokens along with their market capitalization (MCAP) and percentage changes. Your task is to create a concise, Twitter-style market analysis with the following structure:
 
-Token name, MCAP, and percentage change.
-Brief commentary on the token's market movement, possible reasons for the fluctuation (e.g., market sentiment, speculation, liquidity, project success).
-Maintain a short, sharp, and engaging tone suitable for social media platforms like Twitter.
-Format the output exactly like this:
+Token name, MCAP, and percentage change should be listed as follows:
 ${listToken}
-
-Brief commentary on the trend and cause
-
-📊 Close with a key takeaway about risk, market trends, or strategic advice for investors while keeping the energy high and engaging. 🚀`;
+Brief commentary on market movements:
+Explain possible reasons for the fluctuations (e.g., market sentiment, speculation, liquidity, project success).
+Engaging summary and strategic insight:
+Close with a key takeaway or market insight for investors, emphasizing risk, trends, or market dynamics.
+Important: Maintain the exact format shown above for the token list with symbols and emojis. The output should be concise, sharp, and engaging for social media platforms like Twitter.
+  `;
 }
-
