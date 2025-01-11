@@ -15,18 +15,18 @@ export class BirdeyeController {
     public twitterService: TwitterService,
   ) { }
 
-  @get('/birdeye/string-to-make-content')
-  async getStringToMakeContent(): Promise<string> {
-    return this.birdeyeService.getStringToMakeContent({
-      isNotHaveCommentary: true,
-    });
-  }
+  // @get('/birdeye/string-to-make-content')
+  // async getStringToMakeContent(): Promise<string> {
+  //   return this.birdeyeService.getStringToMakeContent({
+  //     isNotHaveCommentary: false,
+  //   });
+  // }
 
-  @get('/birdeye/post-content-by-birdeye')
-  async postContentByBirdeye(): Promise<void> {
-    let res = await this.birdeyeService.getStringToMakeContent({
-      isNotHaveCommentary: true,
-    });
-    this.twitterService.postTweet(res);
-  }
+  // @get('/birdeye/post-content-by-birdeye')
+  // async postContentByBirdeye(): Promise<void> {
+  //   let res = await this.birdeyeService.getStringToMakeContent({
+  //     isNotHaveCommentary: true,
+  //   });
+  //   this.twitterService.postTweet(res);
+  // }
 }

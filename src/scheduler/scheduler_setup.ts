@@ -2,7 +2,7 @@
 import {injectable, LifeCycleObserver, service} from '@loopback/core';
 import {repository} from '@loopback/repository';
 import cron from 'node-cron';
-import {nameChatBotTelegram, prompt_reply_user, prompt_system_twitter_post, prompt_to_create_post, prompt_to_create_post_with_specific_topic, time_utc_post_telegram_every_day, time_utc_post_tweeter_every_day, time_utc_post_tweeter_token_analytics_every_day} from '../constant';
+import {nameChatBotTelegram, prompt_reply_user, prompt_system_twitter_post, prompt_to_create_post, prompt_to_create_post_with_specific_topic, schedulerPostAboutTokenJobs, time_utc_post_telegram_every_day, time_utc_post_tweeter_every_day, time_utc_post_tweeter_token_analytics_every_day} from '../constant';
 import {ChatGptParam, MessGpt} from '../models';
 import {ContentTelegramRepository, GroupToPostContentRepository, MessageRepository} from '../repositories';
 import {AssetService, BirdeyeService, GptService, TelegramBotService, TwitterService} from '../services';
@@ -29,24 +29,28 @@ export class SchedulerManager implements LifeCycleObserver {
   ) {
 
     // Run Post Token analysis article on Twitter every day
-    cron.schedule(time_utc_post_tweeter_token_analytics_every_day, async () => {
-      let content: string = await birdeyeService.getStringToMakeContent({
-        isNotHaveCommentary: true,
-      });
-      if (content.length > 280) {
-        content = await birdeyeService.getStringToMakeContent(
-          {
-            isNotHaveCommentary: false,
-          }
-        );
+    schedulerPostAboutTokenJobs.forEach((job) => {
+      cron.schedule(job.time_cron, async () => {
+        let content: string = await birdeyeService.getStringToMakeContent({
+          isNotHaveCommentary: true,
+          infoToken: job.infoAnalaizeToken,
+        });
         if (content.length > 280) {
-          return;
+          content = await birdeyeService.getStringToMakeContent(
+            {
+              isNotHaveCommentary: false,
+              infoToken: job.infoAnalaizeToken,
+            }
+          );
+          if (content.length > 280) {
+            return;
+          }
         }
-      }
-      await twitterService.postTweet(content);
+        await twitterService.postTweet(content);
 
-    }, {
-      timezone: "Etc/UTC"
+      }, {
+        timezone: "Etc/UTC"
+      });
     });
 
     // Run Post random content on Twitter every day
@@ -211,7 +215,6 @@ export class SchedulerManager implements LifeCycleObserver {
     const content = (res as any)["choices"][0]["message"]["content"];
     return content;
   }
-
 
   start(): void { }
   stop(): void { }

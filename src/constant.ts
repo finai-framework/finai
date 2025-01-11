@@ -1,4 +1,7 @@
+
 ////// Telegram //////
+
+import {TypeChain, TypeChainAll, TypeChainCustom, TypeChainSpecialToken, TypeTime} from './services';
 
 // Time to post articles on Telegram every day
 export let time_utc_post_telegram_every_day = "30 45 12 * * *";
@@ -127,54 +130,56 @@ Do not include the following phrases in your response:
 
 ////// BIRDEYE //////
 export let time_utc_post_tweeter_token_analytics_every_day = "30 26 15 * * *";
-export let max_number_of_token: number = 5;
+export let schedulerPostAboutTokenJobs: SchedulerPostAboutToken[] =
+  [
+    {
+      time_cron: "20 17 12 * * *",
+      infoAnalaizeToken: {
+        type_time: TypeTime._24h,
+        title: "Token Analytics",
+        typeCategory: new TypeChainAll(
+          ["solana", "ethereum", "arbitrum", "avalanche", "bsc", "optimism", "polygon", "base", "zksync"],
+        ),
+      }
+    },
+    {
+      time_cron: "30 17 12 * * *",
+      infoAnalaizeToken: {
+        type_time: TypeTime._1h,
+        title: "Token Analyticsdsds",
+        typeCategory: new TypeChainCustom(
+          {
+            chain: "solana",
+            max_number_of_token: 5,
+            is_new_trending: true,
+          }
+        ),
+      }
 
-export let chain_catergories: {
-  category: string;
-  name: string;
-}[] = [
-    {
-      "category": "solana",
-      "name": "Solana",
     },
     {
-      "category": "ethereum",
-      "name": "Ethereum",
+      time_cron: "50 17 12 * * *",
+      infoAnalaizeToken: {
+        type_time: TypeTime._1h,
+        title: "Token Analyticsdsds",
+        typeCategory: new TypeChainSpecialToken(
+          [
+            {
+              token: "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c",
+              chain: "bsc"
+            },
+            {
+              token: "3vPnCvrYU6xrWQj4xQqLtLeBzbiiYH4dLSoJQq2Lpump",
+              chain: "solana"
+            },
+          ],
+        ),
+      }
     },
-    {
-      "category": "arbitrum",
-      "name": "Arbitrum",
-    },
-    {
-      "category": "avalanche",
-      "name": "Avalanche",
-    },
-    {
-      "category": "bsc",
-      "name": "Binance Smart Chain",
-    },
-    {
-      "category": "optimism",
-      "name": "Optimism",
-    },
-    {
-      "category": "polygon",
-      "name": "Polygon",
-    },
-    {
-      "category": "base",
-      "name": "Base Layer",
-    },
-    {
-      "category": "zksync",
-      "name": "zkSync",
-    },
-    {
-      "category": "sui",
-      "name": "SUI",
-    }
   ];
-export let isApplyCommentary: boolean = true;
+
+export let isApplyCommentary: boolean = false;
+
 export function prompt_analytics_token(listToken: string): string {
   return `
   You are a financial analyst specializing in tokens.
@@ -188,4 +193,20 @@ Engaging summary and strategic insight:
 Close with a key takeaway or market insight for investors, emphasizing risk, trends, or market dynamics.
 Important: Maintain the exact format shown above for the token list with symbols and emojis. The output should be concise, sharp, and engaging for social media platforms like Twitter.
   `;
+}
+
+class SchedulerPostAboutToken {
+  //cron time to auto post
+  time_cron: string;
+
+  infoAnalaizeToken: InfoAnalaizeToken;
+}
+
+export class InfoAnalaizeToken {
+  // type of time to analyze
+  type_time: TypeTime = TypeTime._24h;
+  title: string = "Token Analytics";
+  typeCategory: TypeChain = new TypeChainAll(
+    ["solana", "ethereum", "arbitrum", "avalanche", "bsc", "optimism", "polygon", "base", "zksync", "sui"],
+  );
 }

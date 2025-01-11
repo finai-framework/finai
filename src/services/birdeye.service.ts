@@ -1,6 +1,6 @@
 import { /* inject, */ BindingScope, injectable, service} from '@loopback/core';
 import axios from 'axios';
-import {chain_catergories, isApplyCommentary, max_number_of_token, prompt_analytics_token} from '../constant';
+import {InfoAnalaizeToken, isApplyCommentary, prompt_analytics_token} from '../constant';
 import {ChatGptParam, MessGpt} from '../models';
 import {GptService} from './gpt.service';
 
@@ -11,21 +11,42 @@ export class BirdeyeService {
     public gptService: GptService
   ) { }
 
-  async getStringToMakeContent({
-    isNotHaveCommentary = false
+  async getStringToMakeContent(info: {
+    isNotHaveCommentary: boolean,
+    infoToken: InfoAnalaizeToken,
   }) {
+    let {isNotHaveCommentary, infoToken} = info;
+    let stringToMakeContent = `${infoToken.title}\n`;
+    let topTokenInfoTrending: Token[] = []
 
-    let catergory = this.getCategoryToPost();
+    if (infoToken.typeCategory instanceof TypeChainAll) {
+      let typeChainAll: TypeChainAll = infoToken.typeCategory as TypeChainAll;
+      let promises = typeChainAll.chains.map(async (chain) => {
+        let topAllTokenTrending = (await this.getTokensTrending(chain))[0];
+        return topAllTokenTrending;
+      });
+      let topTokenTrendingRes = await Promise.all(promises);
+      topTokenInfoTrending = await this.getTokenInfosTrending(topTokenTrendingRes);
+    } else if (infoToken.typeCategory instanceof TypeChainCustom) {
+      let typeChainCustom = infoToken.typeCategory as TypeChainCustom;
+      let topAllTokenTrending = await this.getTokensTrending(typeChainCustom.chain);
+      console.log(topAllTokenTrending);
 
-    let stringToMakeContent = `${catergory.name} trending token in the past 24h\n`;
-    let top5TokenTrending = await this.getTokensTrending(catergory.category);
-    let top5TokenInfoTrending = await this.getTokenInfosTrending(top5TokenTrending, catergory.category);
-    for (let i = 0; i < top5TokenInfoTrending.length; i++) {
-      stringToMakeContent = this.getInfoTokenToMakeContent(top5TokenInfoTrending, i, stringToMakeContent);
+      if (typeChainCustom.is_new_trending) {
+        topAllTokenTrending = await this.addAgeByDexScreener(topAllTokenTrending);
+      }
+      topAllTokenTrending = topAllTokenTrending.slice(0, typeChainCustom.max_number_of_token);
+      topTokenInfoTrending = await this.getTokenInfosTrending(topAllTokenTrending);
+    } else if (infoToken.typeCategory instanceof TypeChainSpecialToken) {
+      topTokenInfoTrending = await this.getTokenInfosTrendingByListAddress((infoToken.typeCategory as TypeChainSpecialToken).listToken);
+    }
+
+    for (let i = 0; i < topTokenInfoTrending.length; i++) {
+      stringToMakeContent = this.getInfoTokenToMakeContent(topTokenInfoTrending, i, stringToMakeContent, infoToken);
     }
     let contentOfTop5Token = stringToMakeContent.toLowerCase();
 
-    if (isNotHaveCommentary && isApplyCommentary) {
+    if (isNotHaveCommentary || !isApplyCommentary) {
       return contentOfTop5Token;
     }
 
@@ -44,23 +65,75 @@ export class BirdeyeService {
     return (contentOfGpt as any)["choices"][0]["message"]["content"].toLowerCase();
   }
 
-  getCategoryToPost(): {
-    category: string;
-    name: string;
-  } {
-    let catergories = chain_catergories;
-    let catergory = catergories[Math.floor(Math.random() * catergories.length)];
-    return catergory;
+  getCategoryToPost(): InfoAnalaizeToken {
+    // return {
+    //   typeCategory: new TypeChainAll(),
+    //   type_time: TypeTime._24h,
+    //   title: "🚀 Top 5 trending tokens on Solana 🚀\n",
+    // };
+    // return {
+    //   typeCategory: new TypeChainSpecialToken(
+    //     [
+    //       {
+    //         token: "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c",
+    //         chain: "bsc"
+    //       },
+    //       {
+    //         token: "3vPnCvrYU6xrWQj4xQqLtLeBzbiiYH4dLSoJQq2Lpump",
+    //         chain: "solana"
+    //       },
+    //     ],
+    //   ),
+    //   type_time: TypeTime._24h,
+    //   title: "🚀 Top 5 trending tokens on Solana 🚀\n",
+    // };
+    return {
+      typeCategory: new TypeChainCustom(
+        {
+          chain: "solana",
+          max_number_of_token: 5,
+          is_new_trending: true,
+        }
+      ),
+      type_time: TypeTime._1h,
+      title: "🚀 Top 5 trending tokens on Solana 🚀\n",
+    }
   }
 
-  private getInfoTokenToMakeContent(top5TokenInfoTrending: TokenInfo[], i: number, stringToMakeContent: string) {
+  private getInfoTokenToMakeContent(top5TokenInfoTrending: TokenInfo[], i: number, stringToMakeContent: string, infoAnalaizeToken: InfoAnalaizeToken) {
     let tokenInfo = top5TokenInfoTrending[i];
     let symbol = tokenInfo.symbol;
     let market_cap = formatNumber(((tokenInfo.price ?? 0) * (tokenInfo.supply ?? 0)));
-    let change_24h_percent = formatNumber(tokenInfo.priceChange24hPercent ?? 0);
+
+    let type_time = infoAnalaizeToken.type_time;
+    let change_percent = () => {
+      switch (type_time) {
+        case TypeTime._30m:
+          return tokenInfo.priceChange30mPercent;
+        case TypeTime._1h:
+          return tokenInfo.priceChange1hPercent;
+        case TypeTime._2h:
+          return tokenInfo.priceChange2hPercent;
+        case TypeTime._4h:
+          return tokenInfo.priceChange4hPercent;
+        case TypeTime._6h:
+          return tokenInfo.priceChange6hPercent;
+        case TypeTime._8h:
+          return tokenInfo.priceChange8hPercent;
+        case TypeTime._12h:
+          return tokenInfo.priceChange12hPercent;
+        case TypeTime._24h:
+          return tokenInfo.priceChange24hPercent;
+        default:
+          0;
+      }
+    };
+
+    let change_percent_string = formatNumber(change_percent() ?? 0);
+
     let linktwitter = tokenInfo.extensions?.twitter ?? "";
     let nameTwitter = this.getNameTwiiter(linktwitter);
-    stringToMakeContent += `$${symbol} - $${market_cap} (${((tokenInfo.priceChange24hPercent ?? 0) > 0) ? "🟢" : "🔴"}${change_24h_percent}%) ${nameTwitter}`;
+    stringToMakeContent += `$${symbol} - $${market_cap} (${((tokenInfo.priceChange24hPercent ?? 0) > 0) ? "🟢" : "🔴"}${change_percent_string}%) ${nameTwitter}`;
     stringToMakeContent += "\n";
     return stringToMakeContent;
   }
@@ -75,13 +148,31 @@ export class BirdeyeService {
     return nameTwitter;
   }
 
-  private async getTokenInfosTrending(top5TokenTrending: Token[], category: string) {
+  private async getTokenInfosTrending(top5TokenTrending: Token[]) {
     let top5TokenInfoTrending = [];
 
     for (let i = 0; i < top5TokenTrending.length; i++) {
       let token = top5TokenTrending[i];
-      let tokenInfo = await this.getInfoToken(token.address ?? "", category);
+      let tokenInfo = await this.getInfoToken(token.address ?? "", token.chain ?? "");
+      if (!tokenInfo) {
+        continue;
+      }
+      top5TokenInfoTrending.push(tokenInfo);
+    }
+    return top5TokenInfoTrending;
+  }
 
+  private async getTokenInfosTrendingByListAddress(tokens: {
+    chain: string;
+    token: string;
+  }[],) {
+    let top5TokenInfoTrending = [];
+
+    for (let i = 0; i < tokens.length; i++) {
+      let tokenInfo = await this.getInfoToken(tokens[i].token, tokens[i].chain);
+      if (!tokenInfo) {
+        continue;
+      }
       top5TokenInfoTrending.push(tokenInfo);
     }
     return top5TokenInfoTrending;
@@ -92,6 +183,8 @@ export class BirdeyeService {
     let params = {
       "sort_by": "rank",
       "sort_type": "asc",
+      "offset": 0,
+      "limit": 20
     }
 
     let header = {
@@ -100,22 +193,27 @@ export class BirdeyeService {
     let response = await this.get(url, params, header);
 
     let listTokenTrending = response.data.data.tokens;
-    let listTop5TokenTrending = listTokenTrending.slice(0, max_number_of_token);
-    console.log(listTop5TokenTrending);
-    return listTop5TokenTrending;
+    listTokenTrending.forEach((item: Token, index: number) => {
+      item.chain = category;
+    });
+    return listTokenTrending;
   }
 
-  async getInfoToken(address: string, category: string): Promise<TokenInfo> {
-    let url = `https://public-api.birdeye.so/defi/token_overview`;
-    let params = {
-      "address": address
+  async getInfoToken(address: string, category: string): Promise<TokenInfo | null> {
+    try {
+      let url = `https://public-api.birdeye.so/defi/token_overview`;
+      let params = {
+        "address": address
+      }
+      let header = {
+        "x-chain": category
+      }
+      let response = await this.get(url, params, header)
+      let tokenInfo: TokenInfo = response.data.data;
+      return tokenInfo;
+    } catch (e) {
+      return null;
     }
-    let header = {
-      "x-chain": category
-    }
-    let response = await this.get(url, params, header)
-    let tokenInfo: TokenInfo = response.data.data;
-    return tokenInfo;
   }
 
   get(url: string, params: object, header?: object) {
@@ -128,6 +226,35 @@ export class BirdeyeService {
     });
   }
 
+  async addAgeByDexScreener(token: Token[]): Promise<Token[]> {
+    let tokens: Token[] = [];
+    let listToken = token.map((item) => item.address).join(",");
+    let res = await axios.get(`https://api.dexscreener.com/latest/dex/tokens/${listToken}`);
+    let data = res.data;
+    let listPair: TokenInfoFromDexScreener[] = data.pairs;
+
+
+    for (let i = 0; i < token.length; i++) {
+      let tokenInfo = token[i];
+      let tokenFromDexScreener = listPair.find((item) => item.baseToken?.address === tokenInfo.address);
+      if (tokenFromDexScreener) {
+        let age_hour = new Date().getTime() - new Date(tokenFromDexScreener.pairCreatedAt ?? 0).getTime();
+        age_hour = Math.floor(age_hour / 1000 / 60 / 60);
+        tokenInfo.age_hour = age_hour;
+      }
+      tokens.push(tokenInfo);
+    }
+
+    //sort by age
+    tokens = token.sort((a, b) => {
+      if (a.age_hour && b.age_hour) {
+        return a.age_hour - b.age_hour;
+      }
+      return 0;
+    });
+
+    return tokens;
+  }
 
 }
 
@@ -141,6 +268,8 @@ export class Token {
   volume24hUSD?: number;
   rank?: number;
   price?: number;
+  age_hour?: number;
+  chain?: string;
 }
 
 export class TokenInfo {
@@ -362,4 +491,114 @@ function formatNumber(num: number): string {
   }
   const roundedNumber = num.toFixed(1);
   return parseFloat(roundedNumber).toString();
+}
+
+class TokenInfoFromDexScreener {
+  chainId?: string;
+  dexId?: string;
+  url?: string;
+  pairAddress?: string;
+  labels?: string[];
+  baseToken?: {
+    address?: string;
+    name?: string;
+    symbol?: string;
+  };
+  quoteToken?: {
+    address?: string;
+    name?: string;
+    symbol?: string;
+  };
+  priceNative?: string;
+  priceUsd?: string;
+  liquidity?: {
+    usd?: number;
+    base?: number;
+    quote?: number;
+  };
+  fdv?: number;
+  marketCap?: number;
+  pairCreatedAt?: number;
+  info?: {
+    imageUrl?: string;
+    websites?: {
+      url?: string;
+    }[];
+    socials?: {
+      type?: string;
+      url?: string;
+    }[];
+  };
+  boosts?: {
+    active?: number;
+  };
+  txns: any;
+  priceChange: any;
+}
+export enum TypeTime {
+  _30m = "30m",
+  _1h = "1h",
+  _2h = "2h",
+  _4h = "4h",
+  _8h = "8h",
+  _24h = "24h",
+  _6h = "6h",
+  _12h = "12h",
+}
+export abstract class TypeChain { }
+
+export class TypeChainAll extends TypeChain {
+  chains: string[] = ["solana", "ethereum", "arbitrum", "avalanche", "bsc", "optimism", "polygon", "base", "zksync", "sui"];
+
+  // contructor
+  constructor(
+    chains?: string[],
+  ) {
+    super();
+    if (chains != null)
+      this.chains = chains;
+  }
+}
+export class TypeChainCustom extends TypeChain {
+  chain: string = "solana";
+
+  // number of token to analyze
+  // if null, use the default value is 5
+  max_number_of_token: number = 5;
+  // is new trending
+  is_new_trending: boolean = false;
+
+  constructor(
+    info: {
+      chain?: string,
+      max_number_of_token?: number,
+      is_new_trending?: boolean,
+    }
+  ) {
+    super();
+    const {chain, max_number_of_token, is_new_trending} = info;
+    if (chain != null)
+      this.chain = chain;
+    if (max_number_of_token != null)
+      this.max_number_of_token = max_number_of_token;
+    if (is_new_trending != null)
+      this.is_new_trending = is_new_trending;
+  }
+}
+export class TypeChainSpecialToken extends TypeChain {
+  listToken: {
+    token: string;
+    chain: string;
+  }[] = [];
+
+  constructor(
+    listToken: {
+      token: string;
+      chain: string;
+    }[],
+  ) {
+    super();
+    this.listToken = listToken;
+  }
+
 }
