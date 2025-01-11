@@ -14,7 +14,8 @@ export async function main(options: ApplicationConfig = {}) {
 
   const url = app.restServer.url;
   console.log(`Server is running at ${NGROK_FRONTEND}`);
-  console.log(`Try ${NGROK_FRONTEND}`);
+  console.log(`Try ${NGROK_FRONTEND} to show UI message`);
+  console.log(`Try ${NGROK_FRONTEND}/explorer to show API`);
 
   return app;
 }
