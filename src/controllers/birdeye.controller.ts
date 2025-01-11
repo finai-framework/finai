@@ -1,8 +1,8 @@
 // Uncomment these imports to begin using these cool features!
 
 import {service} from '@loopback/core';
-import {get, param} from '@loopback/rest';
-import {BirdeyeService, Token, TokenInfo} from '../services';
+import {get} from '@loopback/rest';
+import {BirdeyeService, TwitterService} from '../services';
 
 // import {inject} from '@loopback/core';
 
@@ -11,25 +11,22 @@ export class BirdeyeController {
   constructor(
     @service(BirdeyeService)
     public birdeyeService: BirdeyeService,
+    @service(TwitterService)
+    public twitterService: TwitterService,
   ) { }
-
-  @get('/birdeye/tokens-trending')
-  async getTokensTrending(): Promise<Token[]> {
-    return this.birdeyeService.getTokensTrending();
-  }
-
-  @get('/birdeye/token-info')
-  async getInfoToken(
-    @param.query.string('address')
-    address: string
-  ): Promise<TokenInfo> {
-    return this.birdeyeService.getInfoToken(address);
-  }
 
   @get('/birdeye/string-to-make-content')
   async getStringToMakeContent(): Promise<string> {
     return this.birdeyeService.getStringToMakeContent({
       isNotHaveCommentary: true,
     });
+  }
+
+  @get('/birdeye/post-content-by-birdeye')
+  async postContentByBirdeye(): Promise<void> {
+    let res = await this.birdeyeService.getStringToMakeContent({
+      isNotHaveCommentary: true,
+    });
+    this.twitterService.postTweet(res);
   }
 }
