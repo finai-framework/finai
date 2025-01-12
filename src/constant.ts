@@ -1,7 +1,7 @@
 
 ////// Telegram //////
 
-import {TypeChain, TypeChainAll, TypeChainCustom, TypeChainSpecialToken, TypeTime} from './services';
+import {TypeChain, TypeChainAll, TypeChainCustom, TypeChainSpecificToken, TypeTime} from './services';
 
 // Time to post articles on Telegram every day
 export let time_utc_post_telegram_every_day = "30 45 12 * * *";
@@ -134,7 +134,7 @@ export let schedulerPostAboutTokenJobs: SchedulerPostAboutToken[] =
   [
     {
       time_cron: "20 17 12 * * *",
-      infoAnalaizeToken: {
+      tokenAnalysisInfo: {
         type_time: TypeTime._24h,
         title: "Token Analytics",
         typeCategory: new TypeChainAll(
@@ -144,7 +144,7 @@ export let schedulerPostAboutTokenJobs: SchedulerPostAboutToken[] =
     },
     {
       time_cron: "30 17 12 * * *",
-      infoAnalaizeToken: {
+      tokenAnalysisInfo: {
         type_time: TypeTime._1h,
         title: "Token Analyticsdsds",
         typeCategory: new TypeChainCustom(
@@ -159,10 +159,10 @@ export let schedulerPostAboutTokenJobs: SchedulerPostAboutToken[] =
     },
     {
       time_cron: "50 17 12 * * *",
-      infoAnalaizeToken: {
+      tokenAnalysisInfo: {
         type_time: TypeTime._1h,
         title: "Token Analyticsdsds",
-        typeCategory: new TypeChainSpecialToken(
+        typeCategory: new TypeChainSpecificToken(
           [
             {
               token: "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c",
@@ -199,10 +199,10 @@ class SchedulerPostAboutToken {
   //cron time to auto post
   time_cron: string;
 
-  infoAnalaizeToken: InfoAnalaizeToken;
+  tokenAnalysisInfo: TokenAnalysisInfo;
 }
 
-export class InfoAnalaizeToken {
+export class TokenAnalysisInfo {
   // type of time to analyze
   type_time: TypeTime = TypeTime._24h;
   title: string = "Token Analytics";
