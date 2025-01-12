@@ -120,6 +120,7 @@ export let schedulerPostAboutTokenJobs: SchedulerPostAboutToken[] =
             chain: "solana",
             max_number_of_token: 5,
             is_new_trending: true,
+            token_analyser: true,
           }
         ),
       }
@@ -151,15 +152,12 @@ export let isApplyCommentary: boolean = false;
 export function prompt_analytics_token(listToken: string): string {
   return `
   You are a financial analyst specializing in tokens.
-I will provide a list of tokens along with their market capitalization (MCAP) and percentage changes. Your task is to create a concise, Twitter-style market analysis with the following structure:
-
-Token name, MCAP, and percentage change should be listed as follows:
-${listToken}
-Brief commentary on market movements:
+I will provide a list of tokens along with their market capitalization (MCAP) and percentage changes. Your task is to create a concise (about 100 - 150 characters) , Twitter-style market analysis with the following structure:
 Explain possible reasons for the fluctuations (e.g., market sentiment, speculation, liquidity, project success).
-Engaging summary and strategic insight:
-Close with a key takeaway or market insight for investors, emphasizing risk, trends, or market dynamics.
-Important: Maintain the exact format shown above for the token list with symbols and emojis. The output should be concise, sharp, and engaging for social media platforms like Twitter.
+
+Please provide an analysis for the following tokens:
+List of tokens:
+${listToken}
   `;
 }
 

@@ -35,6 +35,9 @@ export class SchedulerManager implements LifeCycleObserver {
           isNotHaveCommentary: true,
           infoToken: job.tokenAnalysisInfo,
         });
+        if (content == "") {
+          return;
+        }
         if (content.length > 280) {
           content = await birdeyeService.getStringToMakeContent(
             {

@@ -17,35 +17,42 @@ export class BirdeyeService {
   }) {
     let {isNotHaveCommentary, infoToken} = info;
     let stringToMakeContent = `${infoToken.title}\n`;
-    let topTokenInfoTrending: Token[] = []
+    let topTokenInfoTrending: TokenInfo[] = []
 
     topTokenInfoTrending = await this.fetchTrendingTokens(infoToken, topTokenInfoTrending);
+    if (topTokenInfoTrending.length == 0) return "";
 
     for (let i = 0; i < topTokenInfoTrending.length; i++) {
       stringToMakeContent = this.getInfoTokenToMakeContent(topTokenInfoTrending, i, stringToMakeContent, infoToken);
     }
     let contentOfTop5Token = stringToMakeContent.toLowerCase();
 
-    if (isNotHaveCommentary || !isApplyCommentary) {
-      return contentOfTop5Token;
-    }
-
-    let contentOfGpt = await this.gptService.responseChat(
-      new ChatGptParam(
-        {
-          messages: [
-            new MessGpt({
-              role: "user",
-              content: prompt_analytics_token(contentOfTop5Token)
-            }),
-          ]
+    if ((infoToken.typeCategory instanceof TypeChainCustom && infoToken.typeCategory.token_analyser) || (isNotHaveCommentary && isApplyCommentary)) {
+      let max_gen = 3
+      while (max_gen > 0) {
+        let contentOfGpt = await this.gptService.responseChat(
+          new ChatGptParam(
+            {
+              messages: [
+                new MessGpt({
+                  role: "user",
+                  content: prompt_analytics_token(contentOfTop5Token)
+                }),
+              ]
+            }
+          )
+        );
+        let sumContent = `${contentOfTop5Token}\n${(contentOfGpt as any)["choices"][0]["message"]["content"].toLowerCase()}`;
+        if (sumContent.length <= 280) {
+          return sumContent;
         }
-      )
-    );
-    return (contentOfGpt as any)["choices"][0]["message"]["content"].toLowerCase();
+        max_gen--;
+      }
+    }
+    return contentOfTop5Token;
   }
 
-  private async fetchTrendingTokens(infoToken: TokenAnalysisInfo, topTokenInfoTrending: Token[]) {
+  private async fetchTrendingTokens(infoToken: TokenAnalysisInfo, topTokenInfoTrending: TokenInfo[]) {
     if (infoToken.typeCategory instanceof TypeChainAll) {
       let typeChainAll: TypeChainAll = infoToken.typeCategory as TypeChainAll;
       let promises = typeChainAll.chains.map(async (chain) => {
@@ -72,15 +79,26 @@ export class BirdeyeService {
         });
         // filter token have age < 24h
         topAllTokenTrending = topAllTokenTrending.filter((item) => {
-          console.log(item.age_hour);
           return item.age_hour && item.age_hour < 24;
         });
       }
-
-      topAllTokenTrending = topAllTokenTrending.slice(0, typeChainCustom.max_number_of_token);
+      if (typeChainCustom.token_analyser) {
+        topAllTokenTrending = topAllTokenTrending.sort((a, b) => {
+          if (a.volume24hUSD && b.volume24hUSD) {
+            return b.volume24hUSD - a.volume24hUSD;
+          }
+          return 0;
+        });
+        if (topAllTokenTrending.length > 1) {
+          topAllTokenTrending = [topAllTokenTrending[0]];
+        }
+      } else {
+        topAllTokenTrending = topAllTokenTrending.slice(0, typeChainCustom.max_number_of_token);
+      }
       topTokenInfoTrending = await this.getTokenInfosTrending(topAllTokenTrending);
     } else if (infoToken.typeCategory instanceof TypeChainSpecificToken) {
       let listToken = (infoToken.typeCategory as TypeChainSpecificToken).listToken;
+
       let tokens: Token[] = [];
       for (let i = 0; i < listToken.length; i++) {
         let token = listToken[i];
@@ -90,8 +108,7 @@ export class BirdeyeService {
         }));
       }
       tokens = await this.addAgeAndSocialByDexScreener(tokens);
-
-      topTokenInfoTrending = await this.getTokenInfosTrendingByListAddress((infoToken.typeCategory as TypeChainSpecificToken).listToken);
+      topTokenInfoTrending = await this.getTokenInfosTrending(tokens);
     }
     return topTokenInfoTrending;
   }
@@ -192,20 +209,6 @@ export class BirdeyeService {
         continue;
       }
       tokenInfo.socials_from_dexscreener = token.socials_from_dexscreener;
-      top5TokenInfoTrending.push(tokenInfo);
-    }
-    return top5TokenInfoTrending;
-  }
-
-  private async getTokenInfosTrendingByListAddress(tokens: Token[],) {
-    let top5TokenInfoTrending = [];
-
-    for (let i = 0; i < tokens.length; i++) {
-      let tokenInfo = await this.getInfoToken(tokens[i].address ?? '', tokens[i].chain ?? '');
-      if (!tokenInfo) {
-        continue;
-      }
-      tokenInfo.socials_from_dexscreener = tokens[i].socials_from_dexscreener;
       top5TokenInfoTrending.push(tokenInfo);
     }
     return top5TokenInfoTrending;
@@ -644,21 +647,26 @@ export class TypeChainCustom extends TypeChain {
   // is new trending
   is_new_trending: boolean = false;
 
+  token_analyser: boolean = false;
+
   constructor(
     info: {
       chain?: string,
       max_number_of_token?: number,
       is_new_trending?: boolean,
+      token_analyser?: boolean,
     }
   ) {
     super();
-    const {chain, max_number_of_token, is_new_trending} = info;
+    const {chain, max_number_of_token, is_new_trending, token_analyser} = info;
     if (chain != null)
       this.chain = chain;
     if (max_number_of_token != null)
       this.max_number_of_token = max_number_of_token;
     if (is_new_trending != null)
       this.is_new_trending = is_new_trending;
+    if (token_analyser != null)
+      this.token_analyser = token_analyser;
   }
 }
 export class TypeChainSpecificToken extends TypeChain {
