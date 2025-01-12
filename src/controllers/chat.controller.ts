@@ -2,7 +2,7 @@
 
 import {getModelSchemaRef, post, requestBody, response} from '@loopback/rest';
 import {Readable} from 'stream';
-import {prompt_reply_telegram_no_content} from '../constant';
+import {prompt_reply_user} from '../constant';
 import {ChatGptParam, MessGpt} from '../models';
 import {chatCompleteApiV2, chatResponseApi} from '../open_ai_api/chat_api/chat_api';
 
@@ -83,7 +83,13 @@ export class ChatController {
       messages: [
         new MessGpt({
           role: 'user',
-          content: prompt_reply_telegram_no_content("User, Bot", body.conversation, "Bot"),
+          content: prompt_reply_user(
+            {
+              role: 'User, Bot',
+              context: `user: ${body.conversation}`,
+              nameChatBot: 'Bot'
+            }
+          )
         })
       ]
     });

@@ -3,7 +3,7 @@
 import {service} from '@loopback/core';
 import {repository} from '@loopback/repository';
 import {get, post, requestBody} from '@loopback/rest';
-import {headerGroupPostContent, max_number_of_message_for_context_bot_telegram, minutes_of_session_telegram_bot, nameChatBotTelegram, prompt_reply_telegram_no_content, prompt_reply_user} from '../constant';
+import {headerGroupPostContent, max_number_of_message_for_context_bot_telegram, minutes_of_session_telegram_bot, nameChatBotTelegram, prompt_reply_user} from '../constant';
 import {ChatGptParam, MessGpt} from '../models';
 import {ContentTelegramRepository, GroupToPostContentRepository, MessageRepository} from '../repositories';
 import {GptService, TelegramBotService} from '../services';
@@ -184,9 +184,19 @@ export class TelegramController {
     })
     let prompt = "";
     if (lastContent == null) {
-      prompt = prompt_reply_telegram_no_content(rolesOfContext, context);
+      prompt = prompt_reply_user({
+        role: rolesOfContext,
+        context: context,
+        nameChatBot: nameChatBotTelegram,
+      });
     } else {
-      prompt = prompt_reply_user(rolesOfContext, lastContent.content ?? "", context, nameChatBotTelegram);
+      prompt = prompt_reply_user(
+        {
+          role: rolesOfContext,
+          content: lastContent.content ?? "",
+          context: context,
+          nameChatBot: nameChatBotTelegram,
+        });
     }
     const res = await this.gptService.responseChat(new ChatGptParam({
       messages: [

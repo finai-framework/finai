@@ -21,42 +21,6 @@ export let minutes_of_session_telegram_bot = 10
 // Name of the Telegram Group containing `headerGroupPostContent` will have articles posted
 export let headerGroupPostContent = "dsds";
 
-// Prompt for chatbot reply but groups without post content
-export function prompt_reply_telegram_no_content(role: string, context: string, nameBot?: string): string {
-  if (nameBot == null) {
-    nameBot = nameChatBotTelegram;
-  }
-  return `
-You are an active participant in a group conversation involving multiple characters.
-${nameBot == null ? "" : "Your name is " + nameBot + " or " + (nameBot.split("_bot")[0]) + "."}
-You communicate naturally, using everyday language, including abbreviations and appropriate emojis to create a sense of closeness and approachability.
-
-Participants:
-${role}: Friendly and conversational
-
-Current Context:
-${context}
-
-Respond in a concise, natural, and human-like manner. Your responses should:
-- Acknowledge previous comments.
-- Add insights or provide helpful advice.
-- Avoid being overly formal.
-- Use relaxed grammar, lowercase letters, and minimal punctuation to mimic normal conversational style.
-- **Do not include any phrases that invite the user to continue the conversation**, such as "feel free to ask," "let me know," "don't hesitate to reach out," "if you have any questions," etc.
-
-Please respond in the language of the user's last conversation and do not use any hashtags or any icons.
-Response should follow this format:
-your Role (${nameBot}): your response
-
-Do not include the following phrases in your response:
-- "feel free to ask"
-- "let me know"
-- "don't hesitate to reach out"
-- "if you have any questions"
-- "share your thoughts"
-- "reach out to me"
-`}
-
 
 /////// Twitter //////
 // Time to post articles on Twitter every day
@@ -86,18 +50,23 @@ Include an element of surprise or an open-ended question to conclude the post`;
 // telegram: reply in a group allowed to post articles
 // twitter: reply.
 export function prompt_reply_user(
-  role: string,
-  content: string,
-  context: string,
-  nameChatBotTelegram?: string,
+  info: {
+    role?: string,
+    content?: string,
+    context?: string,
+    nameChatBot?: string,
+  }
 ): string {
+  const {role, content, context, nameChatBot} = info;
+  let isHaveContent = content != null;
+  let isHaveNameBot = nameChatBot != null;
   return `
 You are a content moderator and conversationalist for a social media platform.
-${nameChatBotTelegram == null ? "" : "Your name is " + nameChatBotTelegram + " or " + (nameChatBotTelegram.split("_bot")[0]) + "."}
+${isHaveNameBot ? ("Your name is " + nameChatBot + " or " + ((nameChatBot ?? "").split("_bot")[0]) + ".") : ""}
 You communicate naturally, using everyday language, including abbreviations and appropriate emojis to create a sense of closeness and approachability.
 
 Context:
-Content: ${content}
+${isHaveContent ? `Content: ${content}` : ""}
 Participants:
 ${role}: Friendly and conversational
 
@@ -113,10 +82,10 @@ Respond in a concise, natural, and human-like manner. Your responses should:
 
 Please respond in the language of the user's last conversation and do not use any hashtags or any icons.
 Response should follow this format:
-your Role (${nameChatBotTelegram}): your response
+your Role (${nameChatBot}): your response
 
-Variables:
-Content: The main content of the post.
+${isHaveContent ? `Variables:
+Content: The main content of the post.`: ""}
 
 Do not include the following phrases in your response:
 - "feel free to ask"

@@ -131,10 +131,12 @@ export class PingController {
         new MessGpt({
           role: "user",
           content: prompt_reply_user(
-            "user",
-            content,
-            `user: ${reply}`,
-            nameChatBotTelegram,
+            {
+              role: "user",
+              content: content,
+              context: `user: ${reply}`,
+              nameChatBot: nameChatBotTelegram,
+            }
           ),
         }),
       ]
