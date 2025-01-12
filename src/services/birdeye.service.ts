@@ -70,6 +70,11 @@ export class BirdeyeService {
           }
           return 0;
         });
+        // filter token have age < 24h
+        topAllTokenTrending = topAllTokenTrending.filter((item) => {
+          console.log(item.age_hour);
+          return item.age_hour && item.age_hour < 24;
+        });
       }
 
       topAllTokenTrending = topAllTokenTrending.slice(0, typeChainCustom.max_number_of_token);
@@ -116,8 +121,8 @@ export class BirdeyeService {
     return {
       typeCategory: new TypeChainCustom(
         {
-          chain: "solana",
-          max_number_of_token: 5,
+          chain: "ethereum",
+          max_number_of_token: 10,
           is_new_trending: true,
         }
       ),

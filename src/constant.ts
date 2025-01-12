@@ -98,7 +98,6 @@ Do not include the following phrases in your response:
 }
 
 ////// BIRDEYE //////
-export let time_utc_post_tweeter_token_analytics_every_day = "30 26 15 * * *";
 export let schedulerPostAboutTokenJobs: SchedulerPostAboutToken[] =
   [
     {
