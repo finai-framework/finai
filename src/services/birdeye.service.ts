@@ -23,7 +23,8 @@ export class BirdeyeService {
     if (topTokenInfoTrending.length == 0) return "";
 
     for (let i = 0; i < topTokenInfoTrending.length; i++) {
-      stringToMakeContent = this.getInfoTokenToMakeContent(topTokenInfoTrending, i, stringToMakeContent, infoToken);
+      let tokenInfo = topTokenInfoTrending[i];
+      stringToMakeContent = this.getInfoTokenToMakeContent(tokenInfo, stringToMakeContent, infoToken);
     }
     let contentOfTop5Token = stringToMakeContent.toLowerCase();
 
@@ -148,8 +149,7 @@ export class BirdeyeService {
     }
   }
 
-  private getInfoTokenToMakeContent(top5TokenInfoTrending: TokenInfo[], i: number, stringToMakeContent: string, infoAnalaizeToken: TokenAnalysisInfo) {
-    let tokenInfo = top5TokenInfoTrending[i];
+  private getInfoTokenToMakeContent(tokenInfo: TokenInfo, stringToMakeContent: string, infoAnalaizeToken: TokenAnalysisInfo) {
     let symbol = tokenInfo.symbol;
     let market_cap = formatNumber(((tokenInfo.price ?? 0) * (tokenInfo.supply ?? 0)));
 
