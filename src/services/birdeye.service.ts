@@ -99,13 +99,13 @@ export class BirdeyeService {
       topTokenInfoTrending = await this.getTokenInfosTrending(topAllTokenTrending);
     } else if (infoToken.typeCategory instanceof TypeChainSpecificToken) {
       let listToken = (infoToken.typeCategory as TypeChainSpecificToken).listToken;
-
       let tokens: Token[] = [];
       for (let i = 0; i < listToken.length; i++) {
         let token = listToken[i];
         tokens.push(new Token({
           address: token.token,
           chain: token.chain,
+          display_name_custome: token.display_name,
         }));
       }
       tokens = await this.addAgeAndSocialByDexScreener(tokens);
@@ -150,7 +150,7 @@ export class BirdeyeService {
   }
 
   private getInfoTokenToMakeContent(tokenInfo: TokenInfo, stringToMakeContent: string, infoAnalaizeToken: TokenAnalysisInfo) {
-    let symbol = tokenInfo.symbol;
+    let symbol = tokenInfo.display_name_custome ?? tokenInfo.symbol;
     let market_cap = formatNumber(((tokenInfo.price ?? 0) * (tokenInfo.supply ?? 0)));
 
     let type_time = infoAnalaizeToken.type_time;
@@ -209,6 +209,7 @@ export class BirdeyeService {
         continue;
       }
       tokenInfo.socials_from_dexscreener = token.socials_from_dexscreener;
+      tokenInfo.display_name_custome = token.display_name_custome;
       top5TokenInfoTrending.push(tokenInfo);
     }
     return top5TokenInfoTrending;
@@ -269,7 +270,6 @@ export class BirdeyeService {
     let data = res.data;
     let listPair: TokenInfoFromDexScreener[] = data.pairs;
 
-
     for (let i = 0; i < token.length; i++) {
       let tokenInfo = token[i];
       let tokenFromDexScreener = listPair.find((item) => item.baseToken?.address === tokenInfo.address);
@@ -281,9 +281,6 @@ export class BirdeyeService {
       }
       tokens.push(tokenInfo);
     }
-
-
-
     return tokens;
   }
 
@@ -300,8 +297,11 @@ export class Token {
   rank?: number;
   price?: number;
   age_hour?: number;
+
+  // custome
   chain?: string;
   socials_from_dexscreener?: any;
+  display_name_custome?: string;
 
   // CONTRUCTOR
   constructor(
@@ -318,6 +318,7 @@ export class Token {
       age_hour?: number;
       chain?: string;
       socials_from_dexscreener?: any[];
+      display_name_custome?: string;
     }
   ) {
     if (info != null) {
@@ -346,6 +347,8 @@ export class Token {
         this.chain = chain;
       if (socials_from_dexscreener != null)
         this.socials_from_dexscreener = socials_from_dexscreener;
+      if (info.display_name_custome != null)
+        this.display_name_custome = info.display_name_custome;
     }
   }
 }
@@ -556,6 +559,7 @@ export class TokenInfo {
   watch?: any;
   numberMarkets?: number;
   socials_from_dexscreener?: any[];
+  display_name_custome?: string;
 }
 
 function formatNumber(num: number): string {
@@ -673,12 +677,14 @@ export class TypeChainSpecificToken extends TypeChain {
   listToken: {
     token: string;
     chain: string;
+    display_name?: string;
   }[] = [];
 
   constructor(
     listToken: {
       token: string;
       chain: string;
+      display_name?: string;
     }[],
   ) {
     super();
