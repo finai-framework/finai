@@ -151,10 +151,9 @@ export class BirdeyeService {
 
   private getInfoTokenToMakeContent(tokenInfo: TokenInfo, stringToMakeContent: string, infoAnalaizeToken: TokenAnalysisInfo) {
     let symbol = tokenInfo.display_name_custome ?? tokenInfo.symbol;
-    let market_cap = formatNumber(((tokenInfo.price ?? 0) * (tokenInfo.supply ?? 0)));
 
     let type_time = infoAnalaizeToken.type_time;
-    let change_percent = () => {
+    let change_price_percent = () => {
       switch (type_time) {
         case TypeTime._30m:
           return tokenInfo.priceChange30mPercent;
@@ -176,15 +175,22 @@ export class BirdeyeService {
           0;
       }
     };
+    let price_show = "";
+    let change_percent_string = "";
+    if (infoAnalaizeToken.typeCategory instanceof TypeChainSpecificToken) {
+      price_show = formatNumber(tokenInfo.price ?? 0);
+    } else {
+      price_show = formatNumber(((tokenInfo.price ?? 0) * (tokenInfo.supply ?? 0)));
+    }
 
-    let change_percent_string = formatNumber(change_percent() ?? 0);
+    change_percent_string = formatNumber(change_price_percent() ?? 0);
 
     let linktwitter = tokenInfo.extensions?.twitter ?? (tokenInfo.socials_from_dexscreener ?? []).find((item: any) => {
       return item.type == "twitter";
     })?.url ?? "";
     let nameTwitter = this.getNameTwiiter(linktwitter);
 
-    stringToMakeContent += `$${symbol} - $${market_cap} (${((tokenInfo.priceChange24hPercent ?? 0) > 0) ? "🟢" : "🔴"}${change_percent_string}%) ${nameTwitter}`;
+    stringToMakeContent += `$${symbol} - $${price_show} (${((tokenInfo.priceChange24hPercent ?? 0) > 0) ? "🟢" : "🔴"}${change_percent_string}%) ${nameTwitter}`;
     stringToMakeContent += "\n";
     return stringToMakeContent;
   }
